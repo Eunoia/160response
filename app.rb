@@ -41,9 +41,10 @@ post '/receiveSMS'
 end
 
 get '/pollTurk'
-    #get list of answered questions  GetReviewableHITs
+    #get list of answered questions 
     @mturk.getReviewableHITs(:Status => "Reviewable").map do |hit|
       #ask mturk for response
+      hitId = hit.hit 
       assignments = @mturk.getAssignmentsForHITAll( :HITId => hitId)
       answers = @mturk.simplifyAnswer( assignments[0][:Answer])
       answers.each do |id,answer|
@@ -52,6 +53,7 @@ get '/pollTurk'
       #if response send text
       phoneNum = Questions.where(:hitid => hit).phoneNum
       @twilio.sms(phoneNum,response)
+      @mturk.setHITAsReviewing( :HITId => hitId )
     end
 end
 

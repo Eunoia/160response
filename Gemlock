@@ -1,0 +1,6 @@
+gem 'sinatra'
+gem 'twilio-ruby'
+gem 'ruby-aws'
+gem 'activerecord'
+gem 'pg'
+

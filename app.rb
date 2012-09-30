@@ -1,9 +1,23 @@
 require 'sinatra'
 require 'pg'
+require "uri"
 require 'activeRecord'
-require "ruby-aws"
-require "twillio"
+# require "ruby-aws"
+#require "twilio-ruby"
 
+db = URI.parse  ENV['DATABASE_URL']||"postgres://grape:@127.0.0.1:5432/grape"
+ActiveRecord::Base.establish_connection(
+  :adapter  => db.scheme == 'postgres' ? 'postgresql' : db.scheme,
+  :host     => db.host,
+  :username => db.user,
+  :password => db.password,
+  :database => db.path[1..-1],
+  :encoding => 'utf8',
+  :min_messages => 'NOTICE'
+)
+class Questions < ActiveRecord::Base
+end
+@twilio = Twilio::REST::Client.new ENV['TWILIO_SID'], ENV['TWILIO_TOKEN']
 
 get '/'
     haml :index
@@ -17,7 +31,7 @@ get '/question/:id'
     haml :question
 end
 
-get '/receiveSMS'
+post '/receiveSMS'
     #parse options
     #return if phoneNum != env[phoneNum]
     #create question
@@ -26,19 +40,27 @@ get '/receiveSMS'
     #send to mTurk
 end
 
+get '/pollTurk'
+    #get list of answered questions  GetReviewableHITs
+    @mturk.getReviewableHITs(:Status => "Reviewable").map do |hit|
+      #ask mturk for response
+      assignments = @mturk.getAssignmentsForHITAll( :HITId => hitId)
+      answers = @mturk.simplifyAnswer( assignments[0][:Answer])
+      answers.each do |id,answer|
+        response = answer
+      end
+      #if response send text
+      phoneNum = Questions.where(:hitid => hit).phoneNum
+      @twilio.sms(phoneNum,response)
+    end
+end
+
 get '/receiveNotice'
     #parse options
     #get response from Mturk
     #save response to DB
     #send sms 
 end
-
-=begin 
-#DB schema
-*questions (and HITS)
-*answers
-*users
-=end
 
 =begin 
 #notes

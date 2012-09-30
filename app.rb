@@ -50,8 +50,8 @@ end
 get '/pollTurk' do
 	#get list of answered questions 
 	@mturk.getReviewableHITs(:Status => "Reviewable").map do |hit|
-		#ask mturk for response
 		hitId = hit.hit 
+		#ask mturk for response
 		assignments = @mturk.getAssignmentsForHITAll( :HITId => hitId)
 		answers = @mturk.simplifyAnswer( assignments[0][:Answer])
 		answers.each do |id,answer|
@@ -61,9 +61,13 @@ get '/pollTurk' do
 		phoneNum = Questions.where(:hitid => hit).phoneNum
 		@twilio.sms(phoneNum,response)
 		@mturk.setHITAsReviewing( :HITId => hitId )
+		question = Questions.find(params[:id])
+		question.response = response
+		question.hitid = assignments[0][:WorkerId]
+		question.timeFinished =  resp[:SubmitTime]
+		question.save
 	end
 end
-
 get '/receiveNotice' do
 	#parse options
 	#get response from Mturk

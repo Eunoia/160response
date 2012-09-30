@@ -18,12 +18,14 @@ ActiveRecord::Base.establish_connection(
 
 ActiveRecord::Schema.define do
 	create_table(:questions) do |table|
+		#mturk fields
 		table.column :hitid,         :string
 		table.column :hittypeid,     :string	
 		table.column :workerid,      :string
 		table.column :timeFinished,  :datetime #time
 		table.column :response,      :text
 		table.column :value,         :real
+		#user fields
 		table.column :questionText,  :text
 		table.column :phoneNumber,   :string
 		table.column :timeSent,      :datetime #time

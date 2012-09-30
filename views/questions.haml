@@ -1,4 +1,7 @@
-%h1 Questions
-	- @questions.each do |question|
-		%h3
-			=question.questionText
+%h1 
+	Questions (
+	= @questions.length
+	)
+- @questions.each do |question|
+	%h3
+		=question.questionText

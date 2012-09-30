@@ -28,6 +28,7 @@ ActiveRecord::Schema.define do
 		#user fields
 		table.column :questionText,  :text
 		table.column :phoneNumber,   :string
+		table.column :timeRecived,   :datatime #time
 		table.column :timeSent,      :datetime #time
 	end
 	#add_index(:hitid,:unique => true) #does not work yet

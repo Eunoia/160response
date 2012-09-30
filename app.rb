@@ -21,9 +21,10 @@ ActiveRecord::Base.establish_connection(
 class Questions < ActiveRecord::Base
 end
 
-#@mturk = Amazon::WebServices::MechanicalTurkRequester.new(:Config => File.join( File.dirname(__FILE__), 'mturk.yml' ))#,:Host => "Production")
-#@twilio = Twilio::REST::Client.new(ENV['TWILIO_SID'], ENV['TWILIO_TOKEN'])
-
+@mturk = Amazon::WebServices::MechanicalTurkRequester.new(:Config => File.join( File.dirname(__FILE__), 'mturk.yml' ),:Host => "Sandbox")
+@twilio = Twilio::REST::Client.new(ENV['TWILIO_SID'], ENV['TWILIO_TOKEN'])
+@phoneNum = ENV["VALID_NUMBER"]
+@twillo_number = ENV["TWILIO_NUM"]
 get '/' do
 	haml :index
 end
@@ -40,11 +41,53 @@ end
 
 post '/receiveSMS' do
 	#parse options
+	phoneNum = params[:From][/\d+/]
+	body = params[:Body]
+	timeRecived = Time.now
 	#return if phoneNum != env[phoneNum]
+	return if(@phoneNum.to_i!=phoneNum.to_i)
+	#return if insufficientFunds
+	return if @mturk.availableFunds<0.55
 	#create question
-	#save question to DB
-	#regester notifier
+	title = body[/^..+\?/]
+	desc = "Research a question, but keep your response below 160 charactors."
+	keywords = "research, creative, 160"
+	numAssignments = 1
+	rewardAmount = 0.30 # 30 cents
+	qualReq = { :QualificationTypeId => Amazon::WebServices::MechanicalTurkRequester::LOCALE_QUALIFICATION_TYPE_ID,
+				:Comparator => 'EqualTo',
+				:LocaleValue => {:Country => 'US'}, }
+	qualReqs = [qualReq]
+	question = QuestionGenerator.build(:Basic) do |q|
+		q.ask "Research this question, use bit.ly to shorten urls, keep your response under 160 chars\nQuestion: #{body}"
+	end
 	#send to mTurk
+	hit = @mturk.createHIT(  :Title => title,
+								:Description => desc,
+								:MaxAssignments => numAssignments,
+								:Reward => { :Amount => rewardAmount, :CurrencyCode => 'USD' },
+								:Question => question,
+								:QualificationRequirement => qualReqs,
+								:Keywords => keywords )
+	if(hit[:Request][:IsValid]!=="True")
+		@twilio.account.sms.messages.create(
+			:from => @twillo_number,
+			:to => phoneNum,
+			:body => "Your question couldn't be asked right now :("
+		)
+		return;
+	end
+	#save question to DB
+	q = Questions.new
+	q.hitid = hit[:HITId]
+	q.hittypeid = hit[:HITTypeId]
+	q.value = 0.3
+	q.questionText = body
+	q.phoneNumber = phoneNumber
+	q.timeRecived = timeRecived
+	q.save
+	#regester notifier
+	#not yet, see example in notes
 end
 
 get '/pollTurk' do
@@ -59,11 +102,15 @@ get '/pollTurk' do
 		end
 		#if response send text
 		phoneNum = Questions.where(:hitid => hit).phoneNum
-		@twilio.sms(phoneNum,response)
+		@twilio.account.sms.messages.create(
+			:from => @twillo_number,
+			:to => phoneNum,
+			:body => response
+		)
 		@mturk.setHITAsReviewing( :HITId => hitId )
 		question = Questions.find(params[:id])
 		question.response = response
-		question.hitid = assignments[0][:WorkerId]
+		question.workerid = assignments[0][:WorkerId]
 		question.timeFinished =  resp[:SubmitTime]
 		question.save
 	end

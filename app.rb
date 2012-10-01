@@ -3,9 +3,11 @@ require 'sinatra'
 require 'pg'
 require "uri"
 require "haml"
-require 'activeRecord'
+require 'active_record'
 require "ruby-aws"
-#require "twilio-ruby"
+require 'amazon/webservices/mturk/question_generator'
+require "ruby-debug"
+require "twilio-ruby"
 include Amazon::WebServices::MTurk
 
 db = URI.parse  ENV['DATABASE_URL']||"postgres://grape:@127.0.0.1:5432/grape"
@@ -21,10 +23,11 @@ ActiveRecord::Base.establish_connection(
 class Questions < ActiveRecord::Base
 end
 
-@mturk = Amazon::WebServices::MechanicalTurkRequester.new(:Config => File.join( File.dirname(__FILE__), 'mturk.yml' ),:Host => "Sandbox")
-@twilio = Twilio::REST::Client.new(ENV['TWILIO_SID'], ENV['TWILIO_TOKEN'])
-@phoneNum = ENV["VALID_NUMBER"]
-@twillo_number = ENV["TWILIO_NUM"]
+@@mturk = Amazon::WebServices::MechanicalTurkRequester.new(:Config => File.join( File.dirname(__FILE__), 'mturk.yml' ),:Host => "Sandbox")
+@@twilio = Twilio::REST::Client.new(ENV['TWILIO_SID'], ENV['TWILIO_TOKEN'])
+@@phoneNum = ENV["VALID_NUMBER"]
+@@twillo_number = ENV["TWILIO_NUM"]
+
 get '/' do
 	haml :index
 end
@@ -45,11 +48,11 @@ post '/receiveSMS' do
 	body = params[:Body]
 	timeRecived = Time.now
 	#return if phoneNum != env[phoneNum]
-	return if(@phoneNum.to_i!=phoneNum.to_i)
+	return if(@@phoneNum.to_i!=phoneNum.to_i)
 	#return if insufficientFunds
-	return if @mturk.availableFunds<0.55
+	return if @@mturk.availableFunds<0.55
 	#create question
-	title = body[/^..+\?/]
+	title = body[/^..+\??/]
 	desc = "Research a question, but keep your response below 160 charactors."
 	keywords = "research, creative, 160"
 	numAssignments = 1
@@ -62,15 +65,15 @@ post '/receiveSMS' do
 		q.ask "Research this question, use bit.ly to shorten urls, keep your response under 160 chars\nQuestion: #{body}"
 	end
 	#send to mTurk
-	hit = @mturk.createHIT(  :Title => title,
+	hit = @@mturk.createHIT(    :Title => title,
 								:Description => desc,
 								:MaxAssignments => numAssignments,
 								:Reward => { :Amount => rewardAmount, :CurrencyCode => 'USD' },
 								:Question => question,
 								:QualificationRequirement => qualReqs,
 								:Keywords => keywords )
-	if(hit[:Request][:IsValid]!=="True")
-		@twilio.account.sms.messages.create(
+	if(hit[:Request][:IsValid]!="True")
+		@@twilio.account.sms.messages.create(
 			:from => @twillo_number,
 			:to => phoneNum,
 			:body => "Your question couldn't be asked right now :("
@@ -83,7 +86,7 @@ post '/receiveSMS' do
 	q.hittypeid = hit[:HITTypeId]
 	q.value = 0.3
 	q.questionText = body
-	q.phoneNumber = phoneNumber
+	q.phoneNumber = phoneNum
 	q.timeRecived = timeRecived
 	q.save
 	#regester notifier
@@ -92,22 +95,24 @@ end
 
 get '/pollTurk' do
 	#get list of answered questions 
-	@mturk.getReviewableHITs(:Status => "Reviewable").map do |hit|
-		hitId = hit.hit 
+	@@mturk.getReviewableHITs(:Status => "Reviewable")[:HIT].map do |hit|
+		hitId = hit[:HITId]
 		#ask mturk for response
-		assignments = @mturk.getAssignmentsForHITAll( :HITId => hitId)
-		answers = @mturk.simplifyAnswer( assignments[0][:Answer])
+		assignments = @@mturk.getAssignmentsForHITAll( :HITId => hitId)
+		debugger
+		answers = @@mturk.simplifyAnswer( assignments[0][:Answer])
 		answers.each do |id,answer|
 			response = answer
 		end
 		#if response send text
-		phoneNum = Questions.where(:hitid => hit).phoneNum
-		@twilio.account.sms.messages.create(
-			:from => @twillo_number,
-			:to => phoneNum,
+		question = Questions.where(:hitid => hitId)
+		@@mturk.setHITAsReviewing( :HITId => hitId )
+		next if(question==[])
+		@@twilio.account.sms.messages.create(
+			:from => @@twillo_number,
+			:to => question.phoneNum,
 			:body => response
 		)
-		@mturk.setHITAsReviewing( :HITId => hitId )
 		question = Questions.find(params[:id])
 		question.response = response
 		question.workerid = assignments[0][:WorkerId]

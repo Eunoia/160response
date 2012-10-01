@@ -4,4 +4,5 @@ gem 'ruby-aws'
 gem 'activerecord'
 gem 'pg'
 gem 'haml'
-
+gem 'shotgun'
+gem 'ruby-debug'

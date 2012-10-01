@@ -2,6 +2,12 @@
 	Questions (
 	= @questions.length
 	)
-- @questions.each do |question|
-	%h3
-		=question.questionText
+%ol
+	- @questions.each do |question|
+		%li
+			%em
+				=question.questionText
+			%small
+				=question.timeRecived.strftime("%a %I:%M%p")
+			%a{:href=>"http://workersandbox.mturk.com/mturk/preview?groupId=#{question.hittypeid}"}
+				mTurk

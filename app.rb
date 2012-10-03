@@ -20,10 +20,16 @@ ActiveRecord::Base.establish_connection(
 	:encoding => 'utf8',
 	:min_messages => 'NOTICE'
 )
+
 class Questions < ActiveRecord::Base
 end
 
-@@mturk = Amazon::WebServices::MechanicalTurkRequester.new(:Config => File.join( File.dirname(__FILE__), 'mturk.yml' ),:Host => "Sandbox")
+@@mturk = Amazon::WebServices::MechanicalTurkRequester.new({
+	#:Config => File.join( File.dirname(__FILE__), 'mturk.yml' ),
+	:Host => "Sandbox",
+	:AWSAccessKeyId => "",
+	:AWSAccessKey => "",
+})
 @@twilio = Twilio::REST::Client.new(ENV['TWILIO_SID'], ENV['TWILIO_TOKEN'])
 @@phoneNum = ENV["VALID_NUMBER"]
 @@twillo_number = ENV["TWILIO_NUM"]
@@ -32,8 +38,16 @@ get '/' do
 	haml :index
 end
 
+get '/styles.css' do
+	less 'styles.less'
+end
 get '/questions' do
 	@questions = Questions.find(:all)
+	haml :questions
+end
+
+get '/#:id/' do
+	@questions = Questions.where(:questionText => "#{params}" )
 	haml :questions
 end
 
@@ -50,6 +64,7 @@ post '/receiveSMS' do
 	#return if phoneNum != env[phoneNum]
 	return if(@@phoneNum.to_i!=phoneNum.to_i)
 	#return if insufficientFunds
+	#possible commands: bonus, redo, funds?, 
 	return if @@mturk.availableFunds<0.55
 	#create question
 	title = body[/^..+\??/]
@@ -96,18 +111,19 @@ end
 get '/pollTurk' do
 	#get list of answered questions 
 	@@mturk.getReviewableHITs(:Status => "Reviewable")[:HIT].map do |hit|
+		debugger
 		hitId = hit[:HITId]
+		question = Questions.where(:hitid => hitId)
+		#dont send message if hit doesnt belong to question.
+		next if(question==[])
 		#ask mturk for response
 		assignments = @@mturk.getAssignmentsForHITAll( :HITId => hitId)
-		debugger
+		@@mturk.setHITAsReviewing( :HITId => hitId )
 		answers = @@mturk.simplifyAnswer( assignments[0][:Answer])
 		answers.each do |id,answer|
 			response = answer
 		end
 		#if response send text
-		question = Questions.where(:hitid => hitId)
-		@@mturk.setHITAsReviewing( :HITId => hitId )
-		next if(question==[])
 		@@twilio.account.sms.messages.create(
 			:from => @@twillo_number,
 			:to => question.phoneNum,

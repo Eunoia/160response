@@ -1,9 +1,47 @@
 body{
+	background-image: url('http://subtlepatterns.subtlepatterns.netdna-cdn.com/patterns/cream_dust.png');
 	padding-top: 60px;
 }
-h1.logo{ background: #222426; color: white; padding-top: 11px; padding-bottom: 11px; padding-right: 2px; width: 60px;}
+h1.logo{ 
+	background: #222426; color: white; padding-top: 11px; padding-bottom: 11px; padding-right: 2px; width: 60px;
+	a{
+		color:white;
+		text-decoration: none;
+	}
+}
 .index{
 	.callToAction{
 		background: #ff575f;
+		position: relative;
+		padding-left:44px;
+		border-left:1px solid white;
+		&:after{
+			content: "";
+			position: absolute;
+			left:100%;
+			width: 0;
+			top:0px ;
+			height: 0;
+			border-top: 20px solid transparent;
+			border-left: 40px solid  #ff575f;
+			border-bottom: 20px solid transparent;
+		}
+		&:before{
+			content: "";
+			position: absolute;
+			right:91%;
+			width: 0;
+			top:0px ;
+			height: 0;
+			border-top: 20px solid transparent;
+			border-left: 40px solid white;
+			border-bottom: 20px solid transparent;
+		}
 	}
+	.span1{
+		padding-top:10px;
+		padding-left: 20px;
+		font-size: 12px;
+	}
+
 }

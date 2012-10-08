@@ -1,0 +1,10 @@
+%p Enter the phone number and password!
+%form(action="/signup" method="post")
+	%div
+		%label(for="phoneNumber")phone number:
+		%input#phoneNumber(type="text" name="phoneNumber")
+	%div
+		%label(for="password")Password:
+		%input#password(type="password" name="password")
+	%div
+		%input(type="submit" value="Sign Up")

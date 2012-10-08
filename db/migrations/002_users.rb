@@ -15,7 +15,7 @@ ActiveRecord::Base.establish_connection(
 )
 
 ActiveRecord::Schema.define do
-	create_table(:questions) do |table|
+	create_table(:users) do |table|
 		table.column :phoneNumber,    :string
 		table.column :salt,           :string	
 		table.column :passwordhash,   :string

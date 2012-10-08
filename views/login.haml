@@ -1,0 +1,15 @@
+-if @phoneNumber!=nil
+  %h1= "Welcome #{@phoneNumber}!"
+  %a{:href => "/logout"} Logout
+-else
+  %form(action="/login" method="post")
+    %div
+      %label(for="phoneNumber")Phone Number:
+      %input#phoneNumber(type="text" name="phoneNumber")
+    %div
+      %label(for="password")Password:
+      %input#password(type="password" name="password")
+    %div
+      %input(type="submit" value="Login")
+  %p
+    %a{:href => "/signup"} Signup

@@ -7,8 +7,13 @@ require 'active_record'
 require "ruby-aws"
 require 'amazon/webservices/mturk/question_generator'
 require "ruby-debug"
+require "digest/sha1"
 require "twilio-ruby"
+require "bcrypt"
 include Amazon::WebServices::MTurk
+
+use Rack::Session::Cookie, :secret => 'A1 sauce 1s so good you should use 1t on a11 yr st34ksssss'
+enable :sessions
 
 db = URI.parse  ENV['DATABASE_URL']||"postgres://grape:@127.0.0.1:5432/grape"
 ActiveRecord::Base.establish_connection(
@@ -23,16 +28,18 @@ ActiveRecord::Base.establish_connection(
 
 class Questions < ActiveRecord::Base
 end
+class Users < ActiveRecord::Base
+end
 
-@@mturk = Amazon::WebServices::MechanicalTurkRequester.new({
-	#:Config => File.join( File.dirname(__FILE__), 'mturk.yml' ),
-	:Host => "Sandbox",
-	:AWSAccessKeyId => "",
-	:AWSAccessKey => "",
-})
-@@twilio = Twilio::REST::Client.new(ENV['TWILIO_SID'], ENV['TWILIO_TOKEN'])
-@@phoneNum = ENV["VALID_NUMBER"]
-@@twillo_number = ENV["TWILIO_NUM"]
+# @@mturk = Amazon::WebServices::MechanicalTurkRequester.new({
+# 	#:Config => File.join( File.dirname(__FILE__), 'mturk.yml' ),
+# 	:Host => "Sandbox",
+# 	:AWSAccessKeyId => "",
+# 	:AWSAccessKey => "",
+# })
+# @@twilio = Twilio::REST::Client.new(ENV['TWILIO_SID'], ENV['TWILIO_TOKEN'])
+# @@phoneNum = ENV["VALID_NUMBER"]
+# @@twillo_number = ENV["TWILIO_NUM"]
 
 get '/' do
 	haml :index
@@ -192,3 +199,80 @@ resp = validEvents.inject({}) do |hash,eventType|
 end
 =end
 
+#users/login stuff
+helpers do
+	def login?
+		if session[:phoneNumber].nil?
+			return false
+		else
+			return true
+		end
+	end
+	def phoneNumber
+		return session[:phoneNumber]
+	end
+end
+
+get "/" do
+	if(login?)
+		@myPatents = patentTable.select{ |p| p[:owner]==phoneNumber }
+	end
+	haml :questions
+end
+
+get "/signup" do
+  haml :signup
+end
+get '/login' do
+	@phoneNumber = session[:phoneNumber]
+	haml :login
+end
+post "/signup" do
+	password_salt = BCrypt::Engine.generate_salt
+	password_hash = BCrypt::Engine.hash_secret(params[:password], password_salt)
+	user = Users.where(:phoneNumber => params[:phoneNumber])
+	if(user.length==0)
+  		Users.new({
+  			:phoneNumber => params[:phoneNumber],
+  			:salt => password_salt,
+  			:passwordhash => password_hash,
+  			:created => Time.now,
+  			:plan => 0,
+  			:active => false
+		}).save
+  else
+	haml :error
+  end
+  session[:phoneNumber] = params[:phoneNumber]
+  redirect "/questions"
+end
+
+post "/login" do
+	user = Users.where(:phoneNumber => params[:phoneNumber]).first
+	if(user.phoneNumber!=nil)
+		if user.passwordhash == BCrypt::Engine.hash_secret(params[:password], user.salt)
+			session[:phoneNumber] = params[:phoneNumber]
+			redirect "/questions"
+		end
+	end
+	haml :error
+end
+
+get "/logout" do
+	session[:phoneNumber] = nil
+	redirect "/"
+end
+
+get '/session' do
+	session
+end
+
+get '/me' do
+	if(login?)
+		@s = session
+		@user = Users.where(:phoneNumber => session[:phoneNumber]).first
+		haml :me
+	else
+		redirect '/login'
+	end
+end

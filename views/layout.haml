@@ -29,4 +29,10 @@
 				.span1
 					%h1.logo
 						%a{:href=>"/"} 160
+				.span2.pull-right
+					-if login?
+						%b
+							%a{ :href=> "/me" } hello #{phoneNumber}
+					-else
+						%a{ :href=> '/login' } Login
 			=yield

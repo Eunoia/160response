@@ -1,5 +1,5 @@
 body {
-  background-image: url('http://subtlepatterns.subtlepatterns.netdna-cdn.com/patterns/cream_dust.png');
+  background-image: url('/cream_dust.png');
   padding-top: 60px;
 }
 h1.logo {
@@ -11,7 +11,7 @@ h1.logo {
   width: 60px;
 }
 h1.logo a {
-  color: white;
+  color: #f9fcfa;
   text-decoration: none;
 }
 .index .callToAction {
@@ -34,7 +34,7 @@ h1.logo a {
 .index .callToAction:before {
   content: "";
   position: absolute;
-  left: 0px;
+  left: -1px;
   width: 0;
   top: 0px ;
   height: 0;

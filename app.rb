@@ -52,7 +52,9 @@ get '/questions' do
 	@questions = Questions.find(:all)
 	haml :questions
 end
-
+get '/price' do
+	erb :price
+end
 get '/#:id/' do
 	@questions = Questions.where(:questionText => "#{params}" )
 	haml :questions

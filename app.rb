@@ -31,15 +31,15 @@ end
 class Users < ActiveRecord::Base
 end
 
-# @@mturk = Amazon::WebServices::MechanicalTurkRequester.new({
-# 	#:Config => File.join( File.dirname(__FILE__), 'mturk.yml' ),
-# 	:Host => "Sandbox",
-# 	:AWSAccessKeyId => "",
-# 	:AWSAccessKey => "",
-# })
-# @@twilio = Twilio::REST::Client.new(ENV['TWILIO_SID'], ENV['TWILIO_TOKEN'])
+@@mturk = Amazon::WebServices::MechanicalTurkRequester.new({
+	#:Config => File.join( File.dirname(__FILE__), 'mturk.yml' ),
+	:Host => "Sandbox",
+	# :AccessKeyId => ENV["AWS_KEY"],
+	# :SecretAccessKey => ENV["AWS_SECRET"],
+})
+@@twilio = Twilio::REST::Client.new(ENV['TWILIO_SID'], ENV['TWILIO_TOKEN'])
 # @@phoneNum = ENV["VALID_NUMBER"]
-# @@twillo_number = ENV["TWILIO_NUM"]
+@@twillo_number = ENV["TWILIO_NUM"]
 
 get '/' do
 	haml :index
@@ -55,15 +55,15 @@ end
 get '/price' do
 	erb :price
 end
-get '/#:id/' do
-	@questions = Questions.where(:questionText => "#{params}" )
-	haml :questions
-end
+# get '/#:id/' do
+# 	@questions = Questions.where(:questionText => "#{params}" )
+# 	haml :questions
+# end
 
-get '/question/:id' do
-	@question = Questions.find(params[:id])
-	haml :question
-end
+# get '/question/:id' do
+# 	@question = Questions.find(params[:id])
+# 	haml :question
+# end
 
 post '/receiveSMS' do
 	#parse options
@@ -71,7 +71,7 @@ post '/receiveSMS' do
 	body = params[:Body]
 	timeRecived = Time.now
 	#return if phoneNum != env[phoneNum]
-	return if(@@phoneNum.to_i!=phoneNum.to_i)
+	# return if(@@phoneNum.to_i!=phoneNum.to_i)
 	#return if insufficientFunds
 	#possible commands: bonus, redo, funds?, 
 	return if @@mturk.availableFunds<0.55
@@ -98,7 +98,7 @@ post '/receiveSMS' do
 								:Keywords => keywords )
 	if(hit[:Request][:IsValid]!="True")
 		@@twilio.account.sms.messages.create(
-			:from => @twillo_number,
+			:from => @@twillo_number,
 			:to => phoneNum,
 			:body => "Your question couldn't be asked right now :("
 		)
@@ -113,36 +113,45 @@ post '/receiveSMS' do
 	q.phoneNumber = phoneNum
 	q.timeRecived = timeRecived
 	q.save
+	@@twilio.account.sms.messages.create(
+			:from => @@twillo_number,
+			:to => phoneNum,
+			:body => "Your question is live :)"
+	)
 	#regester notifier
 	#not yet, see example in notes
 end
 
 get '/pollTurk' do
 	#get list of answered questions 
-	@@mturk.getReviewableHITs(:Status => "Reviewable")[:HIT].map do |hit|
-		debugger
-		hitId = hit[:HITId]
+	hitids = @@mturk.getReviewableHITs(:Status => "Reviewable")[:HIT]
+	return if hitids.nil?
+	hitids.map do |hit|
+		hitId = hit[1]||hit[:HITId]
 		question = Questions.where(:hitid => hitId)
 		#dont send message if hit doesnt belong to question.
 		next if(question==[])
 		#ask mturk for response
 		assignments = @@mturk.getAssignmentsForHITAll( :HITId => hitId)
-		@@mturk.setHITAsReviewing( :HITId => hitId )
+		#@@mturk.setHITAsReviewing( :HITId => hitId )
 		answers = @@mturk.simplifyAnswer( assignments[0][:Answer])
+		mturk_response = ""
 		answers.each do |id,answer|
-			response = answer
+			mturk_response = answer
 		end
 		#if response send text
+		
 		@@twilio.account.sms.messages.create(
 			:from => @@twillo_number,
-			:to => question.phoneNum,
-			:body => response
+			:to => question[0].phoneNumber,
+			:body => mturk_response
 		)
-		question = Questions.find(params[:id])
-		question.response = response
+		question = Questions.find(question[0].id)
+		question.response = mturk_response
 		question.workerid = assignments[0][:WorkerId]
-		question.timeFinished =  resp[:SubmitTime]
+		question.timeFinished =  assignments[0][:SubmitTime]
 		question.save
+		""
 	end
 end
 get '/receiveNotice' do
@@ -273,7 +282,8 @@ get '/me' do
 	if(login?)
 		@s = session
 		@user = Users.where(:phoneNumber => session[:phoneNumber]).first
-		haml :me
+		@questions = Questions.where(:phoneNumber => session[:phoneNumber])
+		haml :questions
 	else
 		redirect '/login'
 	end

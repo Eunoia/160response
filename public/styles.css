@@ -12,6 +12,7 @@ h1.logo {
 }
 h1.logo a {
   color: #f9fcfa;
+  font-style: 'Helvetica Neue';
   text-decoration: none;
 }
 .index .callToAction {

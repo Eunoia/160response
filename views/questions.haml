@@ -1,13 +1,25 @@
-%h1 
-	Questions (
-	= @questions.length
-	)
-%ol
-	- @questions.each do |question|
-		%li
-			%em
-				=question.questionText
-			%small
-				=question.timeRecived.strftime("%a %I:%M%p")
-			%a{:href=>"http://workersandbox.mturk.com/mturk/preview?groupId=#{question.hittypeid}"}
-				mTurk
+- if(@questions.length==0)
+	.row
+		.span4.offset2.hero-unit
+			%p
+				Text your questions to 
+				%b (212) 323 - 2343
+-else
+	%h3
+		Questions (
+		= @questions.length
+		)
+	%ol
+		- @questions.each do |question|
+			%li
+				%em
+					=question.questionText
+				%small
+					=question.timeRecived.strftime("%a %I:%M%p")
+				%a{:href=>"http://workersandbox.mturk.com/mturk/preview?groupId=#{question.hittypeid}"}
+					mTurk
+
+- if login?
+	.row
+		.span2.pull-right
+			%a{ :href=> '/logout' } Log out

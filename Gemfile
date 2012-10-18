@@ -1,4 +1,4 @@
-source 'http://gems.github.com/'
+source :rubygems
 gem 'sinatra'
 gem 'twilio-ruby'
 gem 'ruby-aws'

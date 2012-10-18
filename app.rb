@@ -133,7 +133,7 @@ get '/pollTurk' do
 		next if(question==[])
 		#ask mturk for response
 		assignments = @@mturk.getAssignmentsForHITAll( :HITId => hitId)
-		#@@mturk.setHITAsReviewing( :HITId => hitId )
+		@@mturk.setHITAsReviewing( :HITId => hitId )
 		answers = @@mturk.simplifyAnswer( assignments[0][:Answer])
 		mturk_response = ""
 		answers.each do |id,answer|

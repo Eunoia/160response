@@ -1,0 +1,2 @@
+AccessKeyId: <%= ENV["AWS_KEY"] %>
+SecretAccessKey: <%= ENV["AWS_SECRET"] %>

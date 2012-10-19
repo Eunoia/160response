@@ -14,7 +14,7 @@ include Amazon::WebServices::MTurk
 use Rack::Session::Cookie, :secret => 'A1 sauce 1s so good you should use 1t on a11 yr st34ksssss'
 enable :sessions
 
-db = URI.parse  ENV['DATABASE_URL']||"postgres://grape:@127.0.0.1:5432/grape"
+db = URI.parse  "postgres://xvjiummhlhisdf:HDAHaglrVEJXB8NmNwIezm9eLs@ec2-107-22-169-241.compute-1.amazonaws.com:5432/d2u69qoaeftac" #ENV['DATABASE_URL']||"postgres://grape:@127.0.0.1:5432/grape"
 ActiveRecord::Base.establish_connection(
 	:adapter  => db.scheme == 'postgres' ? 'postgresql' : db.scheme,
 	:host     => db.host,
@@ -34,6 +34,7 @@ end
 	#:Config => File.join( File.dirname(__FILE__), 'mturk.yml' ),
 	:Host => "Sandbox",
 	# :AccessKeyId => ENV["AWS_KEY"],
+	# :Portland => "true",
 	# :SecretAccessKey => ENV["AWS_SECRET"],
 })
 @@twilio = Twilio::REST::Client.new(ENV['TWILIO_SID'], ENV['TWILIO_TOKEN'])

@@ -33,9 +33,8 @@ end
 @@mturk = Amazon::WebServices::MechanicalTurkRequester.new({
 	#:Config => File.join( File.dirname(__FILE__), 'mturk.yml' ),
 	:Host => "Sandbox",
-	# :AccessKeyId => ENV["AWS_KEY"],
-	# :Portland => "true",
-	# :SecretAccessKey => ENV["AWS_SECRET"],
+	:AWSAccessKeyId => ENV["AWS_KEY"],
+	:AWSAccessKey => ENV["AWS_SECRET"]
 })
 @@twilio = Twilio::REST::Client.new(ENV['TWILIO_SID'], ENV['TWILIO_TOKEN'])
 # @@phoneNum = ENV["VALID_NUMBER"]

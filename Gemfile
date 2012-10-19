@@ -1,7 +1,7 @@
 source :rubygems
 gem 'sinatra'
 gem 'twilio-ruby'
-gem 'ruby-aws'
+gem "ruby-aws", "~> 1.6.0"
 gem 'activerecord'
 gem 'pg'
 gem 'haml'

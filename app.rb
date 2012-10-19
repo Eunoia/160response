@@ -6,7 +6,6 @@ require "haml"
 require 'active_record'
 require "ruby-aws"
 require 'amazon/webservices/mturk/question_generator'
-require "ruby-debug"
 require "digest/sha1"
 require "twilio-ruby"
 require "bcrypt"

@@ -9,8 +9,8 @@ require 'rexml/document'
 
 class TurkOperation
 	# Define constants
-	AWS_ACCESS_KEY_ID = 'AKIAJP4F7DY6FE5CC7ZA'
-	AWS_SECRET_ACCESS_KEY = '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'
+	AWS_ACCESS_KEY_ID = ENV['AWS_KEY']
+	AWS_SECRET_ACCESS_KEY = ENV['AWS_SECRET']
 	SERVICE_NAME = 'AWSMechanicalTurkRequester'
 	SERVICE_VERSION = '2012-03-25'
         REST_URL = "https://mechanicalturk.sandbox.amazonaws.com"

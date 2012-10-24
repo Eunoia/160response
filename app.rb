@@ -123,21 +123,29 @@ end
 
 get '/pollTurk' do
 	#get list of answered questions 
-	hitids = @@mturk.getReviewableHITs(:Status => "Reviewable")[:HIT]
+	hitids = @@mturk.getReviewableHITs(:Status => "Reviewable", :PageSize => 100)[:HIT]
 	return if hitids.nil?
 	hitids.map do |hit|
 		hitId = hit[1]||hit[:HITId]
+		puts hitId
 		question = Questions.where(:hitid => hitId)
 		#dont send message if hit doesnt belong to question.
 		next if(question==[])
 		#ask mturk for response
 		assignments = @@mturk.getAssignmentsForHITAll( :HITId => hitId)
+		#send alert if question expired w/o answer
+		if(assignments[0].nil?)
+			puts "\nx_x";
+			next;
+		end
 		@@mturk.setHITAsReviewing( :HITId => hitId )
 		answers = @@mturk.simplifyAnswer( assignments[0][:Answer])
 		mturk_response = ""
 		answers.each do |id,answer|
 			mturk_response = answer
 		end
+		puts mturk_response
+		next if gets.chomp[/^n.+/i]
 		#if response send text
 		
 		@@twilio.account.sms.messages.create(
@@ -184,7 +192,7 @@ resp = validEvents.inject({}) do |hash,eventType|
 										:HITTypeId => '2KGW3K4F0OHOF5ROE6BO5LA2HMI01O',
 										:Active => "true",
 										:Notification => {
-											:Destination => 'http://requestb.in/17f36621',
+											:Destination => 'http://requestb.in/18zmm1r1',
 											:Transport => "REST",
 											:Active => "true",
 											:EventType => eventType,
@@ -197,15 +205,15 @@ end
 
 validEvents = "AssignmentAccepted | AssignmentAbandoned | AssignmentReturned | AssignmentSubmitted | HITReviewable | HITExpired".split(" | ") #ping
 resp = validEvents.inject({}) do |hash,eventType|
-		hash[eventType.to_sym] = TurkOperation.new("SetHITTypeNotification",{
-												:HITTypeId => '2KGW3K4F0OHOF5ROE6BO5LA2HMI01O',
-												"Notification.1.Destination" => 'http://requestb.in/17f36621',
-												"Notification.1.Transport" => "REST",
-												"Notification.1.Active" => "true",
-												"Notification.1.EventType" => eventType,
-												"Notification.1.Version" => "2006-05-05",
-												:Active => "true",
-												}).do_op.to_s; hash
+hash[eventType.to_sym] = TurkOperation.new("SetHITTypeNotification",{
+:HITTypeId => hitid,
+"Notification.1.Destination" => 'http://requestb.in/18zmm1r1',
+"Notification.1.Transport" => "REST",
+"Notification.1.Active" => "true",
+"Notification.1.EventType" => eventType,
+"Notification.1.Version" => "2006-05-05",
+:Active => "true",
+}).do_op.to_s; hash
 end
 =end
 

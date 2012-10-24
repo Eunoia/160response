@@ -1,0 +1,76 @@
+require "rubygems"
+require 'active_record'
+require "ruby-aws"
+require "twilio-ruby"
+require 'pg'
+require "uri"
+require 'ruby-debug'
+
+db = URI.parse  ENV['DATABASE_URL']||"postgres://grape:@127.0.0.1:5432/grape"
+ActiveRecord::Base.establish_connection(
+	:adapter  => db.scheme == 'postgres' ? 'postgresql' : db.scheme,
+	:host     => db.host,
+	:username => db.user,
+	:password => db.password,
+	:database => db.path[1..-1],
+	:encoding => 'utf8',
+	:min_messages => 'NOTICE'
+)
+
+class Questions < ActiveRecord::Base
+end
+class Users < ActiveRecord::Base
+end
+
+@@mturk = Amazon::WebServices::MechanicalTurkRequester.new({
+	#:Config => File.join( File.dirname(__FILE__), 'mturk.yml' ),
+	:Host => "Sandbox",
+	:AWSAccessKeyId => ENV["AWS_KEY"],
+	:AWSAccessKey => ENV["AWS_SECRET"]
+})
+@@twilio = Twilio::REST::Client.new(ENV['TWILIO_SID'], ENV['TWILIO_TOKEN'])
+# @@phoneNum = ENV["VALID_NUMBER"]
+@@twillo_number = ENV["TWILIO_NUM"]
+
+#get list of answered questions 
+hitids = @@mturk.getReviewableHITs(:Status => "Reviewable", :PageSize => 100)[:HIT]
+return if hitids.nil?
+puts hitids.length.to_s+" Reviewable tasks"
+puts hitids.map{ |hit| hit[1]||hit[:HITId] }.join(" ")
+hitids.map do |hit|
+	hitId = hit[1]||hit[:HITId]
+	puts hitId
+	question = Questions.where(:hitid => hitId)
+	#dont send message if hit doesnt belong to question.
+	debugger if hitId=="25L3FEC0UC6E2LYHG8ZCUFLCCIQT2A"
+
+	next if(question==[])
+	#ask mturk for response
+	assignments = @@mturk.getAssignmentsForHITAll( :HITId => hitId)
+	#send alert if question expired w/o answer
+	if(assignments[0].nil?)
+		puts "\nx_x";
+		next;
+	end
+	@@mturk.setHITAsReviewing( :HITId => hitId )
+	answers = @@mturk.simplifyAnswer( assignments[0][:Answer])
+	mturk_response = ""
+	answers.each do |id,answer|
+		mturk_response = answer
+	end
+	puts mturk_response
+	next if gets.chomp[/^n.+/i]
+	#if response send text
+	
+	@@twilio.account.sms.messages.create(
+		:from => @@twillo_number,
+		:to => question[0].phoneNumber,
+		:body => mturk_response
+	)
+	question = Questions.find(question[0].id)
+	question.response = mturk_response
+	question.workerid = assignments[0][:WorkerId]
+	question.timeFinished =  assignments[0][:SubmitTime]
+	question.save
+	""
+end

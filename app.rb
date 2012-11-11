@@ -32,7 +32,7 @@ end
 
 @@mturk = Amazon::WebServices::MechanicalTurkRequester.new({
 	#:Config => File.join( File.dirname(__FILE__), 'mturk.yml' ),
-	:Host => "Sandbox",
+	# :Host => "Sandbox",
 	:AWSAccessKeyId => ENV["AWS_KEY"],
 	:AWSAccessKey => ENV["AWS_SECRET"]
 })

@@ -87,6 +87,7 @@ post '/receiveSMS' do
 	question = QuestionGenerator.build(:Basic) do |q|
 		q.ask "Research this question, use bit.ly to shorten urls, keep your response under 160 chars\nQuestion: #{body}"
 	end
+	puts "Created Question"
 	#send to mTurk
 	hit = @@mturk.createHIT(    :Title => title,
 								:Description => desc,
@@ -95,6 +96,7 @@ post '/receiveSMS' do
 								:Question => question,
 								:QualificationRequirement => qualReqs,
 								:Keywords => keywords )
+	puts "Posted Question to mTurk"
 	if(hit[:Request][:IsValid]!="True")
 		@@twilio.account.sms.messages.create(
 			:from => @@twillo_number,
@@ -112,11 +114,13 @@ post '/receiveSMS' do
 	q.phoneNumber = phoneNum
 	q.timeRecived = timeRecived
 	q.save
+	puts "Saved question to DB"
 	@@twilio.account.sms.messages.create(
 			:from => @@twillo_number,
 			:to => phoneNum,
 			:body => "Your question is live :)"
 	)
+	puts "Notified Asker"
 	#regester notifier
 	#not yet, see example in notes
 end

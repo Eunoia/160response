@@ -135,7 +135,7 @@ get '/pollTurk' do
 		assignments = @@mturk.getAssignmentsForHITAll( :HITId => hitId)
 		#send alert if question expired w/o answer
 		if(assignments[0].nil?)
-			puts "\nx_x";
+			puts "\tx_x";
 			next;
 		end
 		@@mturk.setHITAsReviewing( :HITId => hitId )

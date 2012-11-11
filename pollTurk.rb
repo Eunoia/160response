@@ -4,7 +4,7 @@ require "ruby-aws"
 require "twilio-ruby"
 require 'pg'
 require "uri"
-require 'ruby-debug'
+# require 'ruby-debug'
 
 db = URI.parse  ENV['DATABASE_URL']||"postgres://grape:@127.0.0.1:5432/grape"
 ActiveRecord::Base.establish_connection(
@@ -34,7 +34,7 @@ end
 
 #get list of answered questions 
 hitids = @@mturk.getReviewableHITs(:Status => "Reviewable", :PageSize => 100)[:HIT]
-return if hitids.nil?
+exit if hitids.nil?
 puts hitids.length.to_s+" Reviewable tasks"
 puts hitids.map{ |hit| hit[1]||hit[:HITId] }.join(" ")
 hitids.map do |hit|
@@ -42,14 +42,16 @@ hitids.map do |hit|
 	puts hitId
 	question = Questions.where(:hitid => hitId)
 	#dont send message if hit doesnt belong to question.
-	debugger if hitId=="25L3FEC0UC6E2LYHG8ZCUFLCCIQT2A"
-
 	next if(question==[])
 	#ask mturk for response
 	assignments = @@mturk.getAssignmentsForHITAll( :HITId => hitId)
 	#send alert if question expired w/o answer
 	if(assignments[0].nil?)
-		puts "\nx_x";
+		@@mturk.disposeHIT(:HITId => hitId );
+		question[0].response = "EXPIRED"
+		question[0].workerid = nil
+		question[0].timeFinished = Time.at(0);
+		puts "\tx_x";
 		next;
 	end
 	@@mturk.setHITAsReviewing( :HITId => hitId )

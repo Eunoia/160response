@@ -61,7 +61,7 @@ hitids.map do |hit|
 		mturk_response = answer
 	end
 	puts mturk_response
-	next if gets.chomp[/^n.+/i]
+	# next if gets.chomp[/^n.+/i]
 	#if response send text
 	
 	@@twilio.account.sms.messages.create(

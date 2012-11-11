@@ -79,7 +79,7 @@ post '/receiveSMS' do
 	desc = "Research a question, but keep your response below 160 charactors."
 	keywords = "research, creative, 160"
 	numAssignments = 1
-	rewardAmount = 0.30 # 30 cents
+	rewardAmount = 0.75 + rand(100)/100 #priced between .75 and $1.75
 	qualReq = { :QualificationTypeId => Amazon::WebServices::MechanicalTurkRequester::LOCALE_QUALIFICATION_TYPE_ID,
 				:Comparator => 'EqualTo',
 				:LocaleValue => {:Country => 'US'}, }

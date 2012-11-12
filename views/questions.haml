@@ -9,15 +9,19 @@
 		Questions (
 		= @questions.length
 		)
-	%ol
+	%ol.questions
 		- @questions.each do |question|
-			%li
-				%em
-					=question.questionText
-				%small
-					=question.timeRecived.strftime("%a %I:%M%p")
-				%a{:href=>"http://workersandbox.mturk.com/mturk/preview?groupId=#{question.hittypeid}"}
-					mTurk
+			%li.well
+				%div
+					%b
+						%a{:href=>"http://workersandbox.mturk.com/mturk/preview?groupId=#{question.hittypeid}"}
+							=question.questionText
+				- unless(question.response.nil?)
+					%div.response
+						%em
+							=question.response
+						%i
+							="#{((question.timeFinished - question.timeRecived)/60).round} mins"
 
 - if login?
 	.row

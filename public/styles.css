@@ -228,3 +228,17 @@ h1.logo a {
 .nobkgd {
   background-color: none;
 }
+ol.questions li div b {
+  font-size: 18px;
+}
+ol.questions li .response {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+ol.questions li .response i {
+  display: block;
+  font-size: 10px;
+}
+ol.questions li .response i:before {
+  content: "Answered in ";
+}

@@ -39,10 +39,15 @@ puts hitids.length.to_s+" Reviewable tasks"
 puts hitids.map{ |hit| hit[1]||hit[:HITId] }.join(" ")
 hitids.map do |hit|
 	hitId = hit[1]||hit[:HITId]
-	puts hitId
+	puts "########## #{hitId} ##########"
 	question = Questions.where(:hitid => hitId)
-	#dont send message if hit doesnt belong to question.
-	next if(question==[])
+	#dispose of hit if it doesnt belong to question.
+	if(question==[])
+		@@mturk.forceExpireHIT(:HITId => hitId );
+		puts "forced experation of HIT, it had no question"
+		next
+	end
+	puts question.questionText
 	#ask mturk for response
 	assignments = @@mturk.getAssignmentsForHITAll( :HITId => hitId)
 	#send alert if question expired w/o answer
@@ -51,6 +56,11 @@ hitids.map do |hit|
 		question[0].response = "EXPIRED"
 		question[0].workerid = nil
 		question[0].timeFinished = Time.at(0);
+		@@twilio.account.sms.messages.create(
+			:from => @@twillo_number,
+			:to => question[0].phoneNumber,
+			:body => "EXPIRED: #{question[0].questionText}"[0..158]
+		)
 		puts "\tx_x";
 		next;
 	end
@@ -61,8 +71,6 @@ hitids.map do |hit|
 		mturk_response = answer
 	end
 	puts mturk_response
-	# next if gets.chomp[/^n.+/i]
-	#if response send text
 	
 	@@twilio.account.sms.messages.create(
 		:from => @@twillo_number,

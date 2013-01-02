@@ -100,11 +100,13 @@ post '/receiveSMS' do
 								:Keywords => keywords )
 	puts "Posted Question to mTurk"
 	if(hit[:Request][:IsValid]!="True")
-		@@twilio.account.sms.messages.create(
-			:from => @@twillo_number,
-			:to => phoneNum,
-			:body => "Your question couldn't be asked right now :("
-		)
+		puts "Notifying asker of failure"
+		Twilio::TwiML::Response.new { |r| r.SMS  "Your question couldn't be asked right now :(" }.text
+		# @@twilio.account.sms.messages.create(
+		# 	:from => @@twillo_number,
+		# 	:to => phoneNum,
+		# 	:body => "Your question couldn't be asked right now :("
+		# )
 		return;
 	end
 	#save question to DB
@@ -117,12 +119,13 @@ post '/receiveSMS' do
 	q.timeRecived = timeRecived
 	q.save
 	puts "Saved question to DB"
-	@@twilio.account.sms.messages.create(
-			:from => @@twillo_number,
-			:to => phoneNum,
-			:body => "Your question is live :)"
-	)
-	puts "Notified Asker"
+	# puts @@twilio.account.sms.messages.create(
+	# 		:from => @@twillo_number,
+	# 		:to => phoneNum,
+	# 		:body => "Your question is live :)"
+	# )
+	puts "Notifying asker their question was recived."
+	Twilio::TwiML::Response.new { |r| r.SMS  "Your question is live :)" }.text
 	#regester notifier
 	#not yet, see example in notes
 end

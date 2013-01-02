@@ -69,6 +69,7 @@ post '/receiveSMS' do
 	phoneNum = params[:From][/\d+/]
 	body = params[:Body]
 	timeRecived = Time.now
+	puts "Message from: #{phoneNum}, #{body}"
 	#return if phoneNum != env[phoneNum]
 	# return if(@@phoneNum.to_i!=phoneNum.to_i)
 	#return if insufficientFunds
@@ -84,6 +85,7 @@ post '/receiveSMS' do
 				:Comparator => 'EqualTo',
 				:LocaleValue => {:Country => 'US'}, }
 	qualReqs = [qualReq]
+	puts "Building Question"
 	question = QuestionGenerator.build(:Basic) do |q|
 		q.ask "Research this question, use bit.ly to shorten urls, keep your response under 160 chars\nQuestion: #{body}"
 	end

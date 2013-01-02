@@ -47,7 +47,7 @@ hitids.map do |hit|
 		puts "forced experation of HIT, it had no question"
 		next
 	end
-	puts question.questionText
+	puts question[0].questionText
 	#ask mturk for response
 	assignments = @@mturk.getAssignmentsForHITAll( :HITId => hitId)
 	#send alert if question expired w/o answer
